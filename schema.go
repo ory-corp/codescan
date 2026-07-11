@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/ast"
-	"go/importer"
 	"go/token"
 	"go/types"
 	"log"
@@ -1719,22 +1718,33 @@ func isFieldStringable(tpe ast.Expr) bool {
 	return false
 }
 
-func isTextMarshaler(tpe types.Type) bool {
-	encodingPkg, err := importer.Default().Import("encoding")
-	if err != nil {
-		return false
-	}
-	// Proposal for enhancement: there should be a better way to check this than hardcoding the TextMarshaler iface.
-	obj := encodingPkg.Scope().Lookup("TextMarshaler")
-	if obj == nil {
-		return false
-	}
-	ifc, ok := obj.Type().Underlying().(*types.Interface)
-	if !ok {
-		return false
-	}
+// textMarshalerIface is a synthesized encoding.TextMarshaler interface:
+//
+//	interface{ MarshalText() (text []byte, err error) }
+//
+// It is built with go/types instead of loading the real "encoding" package
+// through importer.Default(). The default importer locates export data by
+// running "go list -export" with the GOROOT the binary was built against;
+// when GOTOOLCHAIN selects a different toolchain at runtime, that invocation
+// fails ("cannot find main module") and every TextMarshaler check silently
+// returned false, changing the generated spec. types.Implements only needs a
+// structurally identical interface, so synthesizing it removes the
+// dependency on the environment and toolchain.
+var textMarshalerIface = types.NewInterfaceType([]*types.Func{
+	types.NewFunc(token.NoPos, nil, "MarshalText",
+		types.NewSignatureType(nil, nil, nil,
+			nil,
+			types.NewTuple(
+				types.NewVar(token.NoPos, nil, "text", types.NewSlice(types.Typ[types.Byte])),
+				types.NewVar(token.NoPos, nil, "err", types.Universe.Lookup("error").Type()),
+			),
+			false,
+		),
+	),
+}, nil).Complete()
 
-	return types.Implements(tpe, ifc)
+func isTextMarshaler(tpe types.Type) bool {
+	return types.Implements(tpe, textMarshalerIface)
 }
 
 func isStdTime(o *types.TypeName) bool {
