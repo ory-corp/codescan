@@ -799,3 +799,13 @@ type NamedMapOfStoreOrderSlices GenericMap[string, GenericSlice[StoreOrder]]
 //
 // End of models related to named types with type arguments
 //
+
+// SomeStringSlice is a named slice type with swagger:type array.
+// swagger:type array
+type SomeStringSlice []string
+
+// swagger:model namedWithArrayType
+type NamedWithArrayType struct {
+	// Tags for this item.
+	Tags SomeStringSlice `json:"tags"`
+}

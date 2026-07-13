@@ -2582,3 +2582,20 @@ func TestSetEnumDoesNotPanic(t *testing.T) {
 
 	require.NoError(t, err)
 }
+
+func TestSwaggerTypeNamedArray(t *testing.T) {
+	sctx := loadClassificationPkgsCtx(t)
+	decl := getClassificationModel(sctx, "NamedWithArrayType")
+	require.NotNil(t, decl)
+	prs := &schemaBuilder{
+		ctx:  sctx,
+		decl: decl,
+	}
+	models := make(map[string]spec.Schema)
+	require.NoError(t, prs.Build(models))
+	schema := models["namedWithArrayType"]
+
+	// swagger:type array on a named []string type should produce
+	// an inlined array with string items, not a $ref.
+	assertArrayProperty(t, &schema, "string", "tags", "", "Tags")
+}
