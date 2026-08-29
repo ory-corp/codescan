@@ -13,6 +13,6 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
-	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 )
